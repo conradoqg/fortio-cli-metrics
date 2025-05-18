@@ -120,44 +120,44 @@ func main() {
         prometheus.GaugeOpts{
             Name: "fortio_request_duration_seconds_avg",
             Help: "Average request latency in seconds",
-        }, []string{"test"},
+        }, []string{"test_name"},
     )
     latencyP50 := prometheus.NewGaugeVec(
         prometheus.GaugeOpts{
             Name: "fortio_request_duration_seconds_p50",
             Help: "50th percentile latency in seconds",
-        }, []string{"test"},
+        }, []string{"test_name"},
     )
     latencyP90 := prometheus.NewGaugeVec(
         prometheus.GaugeOpts{
             Name: "fortio_request_duration_seconds_p90",
             Help: "90th percentile latency in seconds",
-        }, []string{"test"},
+        }, []string{"test_name"},
     )
     latencyP99 := prometheus.NewGaugeVec(
         prometheus.GaugeOpts{
             Name: "fortio_request_duration_seconds_p99",
             Help: "99th percentile latency in seconds",
-        }, []string{"test"},
+        }, []string{"test_name"},
     )
     actualQPS := prometheus.NewGaugeVec(
         prometheus.GaugeOpts{
             Name: "fortio_actual_qps",
             Help: "Actual queries per second observed",
-        }, []string{"test"},
+        }, []string{"test_name"},
     )
     // Success and failure counts per test run (gauges)
     successCount := prometheus.NewGaugeVec(
         prometheus.GaugeOpts{
             Name: "fortio_requests_success",
             Help: "Number of successful requests in the last test run",
-        }, []string{"test"},
+        }, []string{"test_name"},
     )
     failureCount := prometheus.NewGaugeVec(
         prometheus.GaugeOpts{
             Name: "fortio_requests_failure",
             Help: "Number of failed requests in the last test run",
-        }, []string{"test"},
+        }, []string{"test_name"},
     )
 
     // Counter for total runs per test
@@ -165,38 +165,38 @@ func main() {
         prometheus.CounterOpts{
             Name: "fortio_test_runs_total",
             Help: "Total number of Fortio test runs executed",
-        }, []string{"test"},
+        }, []string{"test_name"},
     )
     // Config metrics: reflect configured QPS, concurrency, duration, jitter, uniform
     configQPS := prometheus.NewGaugeVec(
         prometheus.GaugeOpts{
             Name: "fortio_test_config_qps",
             Help: "Configured QPS for the Fortio test",
-        }, []string{"test"},
+        }, []string{"test_name"},
     )
     configConcurrency := prometheus.NewGaugeVec(
         prometheus.GaugeOpts{
             Name: "fortio_test_config_concurrency",
             Help: "Configured concurrency for the Fortio test",
-        }, []string{"test"},
+        }, []string{"test_name"},
     )
     configDuration := prometheus.NewGaugeVec(
         prometheus.GaugeOpts{
             Name: "fortio_test_config_duration_seconds",
             Help: "Configured duration (seconds) for the Fortio test",
-        }, []string{"test"},
+        }, []string{"test_name"},
     )
     configJitter := prometheus.NewGaugeVec(
         prometheus.GaugeOpts{
             Name: "fortio_test_config_jitter",
             Help: "Whether jitter is enabled for the Fortio test (1 = true)",
-        }, []string{"test"},
+        }, []string{"test_name"},
     )
     configUniform := prometheus.NewGaugeVec(
         prometheus.GaugeOpts{
             Name: "fortio_test_config_uniform",
             Help: "Whether uniform staggering is enabled for the Fortio test (1 = true)",
-        }, []string{"test"},
+        }, []string{"test_name"},
     )
     // Register metrics
     registry.MustRegister(

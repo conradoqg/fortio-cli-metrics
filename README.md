@@ -84,7 +84,7 @@ Field descriptions:
 
  ## Prometheus Metrics
 
- Example metrics exposed (labelled by `test`):
+ Example metrics exposed (labelled by `test_name`):
  - `fortio_request_duration_seconds_avg`
  - `fortio_request_duration_seconds_p50`
  - `fortio_request_duration_seconds_p90`
