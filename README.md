@@ -34,13 +34,14 @@
  ```
 
  Available flags:
- - `--metrics-addr string`  Address for Prometheus metrics endpoint (default ":9090")
- - `--config string`        Path to YAML config file defining tests (default "config.yaml")
- - `--cors-origins string`  Comma-separated list of allowed CORS origins (default "*")
+ - `--metrics-addr string`   Address for Prometheus metrics endpoint (default ":9090")
+ - `--metrics-path string`   HTTP path for Prometheus metrics endpoint (default "/metrics")
+ - `--config string`         Path to YAML config file defining tests (default "config.yaml")
+ - `--cors-origins string`   Comma-separated list of allowed CORS origins (default "*")
 
  Example:
  ```bash
- fortio-cli-metrics --metrics-addr ":8080" --config config.sample.yaml
+ fortio-cli-metrics --metrics-addr ":8080" --metrics-path "/metrics" --config config.sample.yaml
  ```
 
  Then configure Prometheus to scrape metrics from `http://<host>:8080/metrics`.

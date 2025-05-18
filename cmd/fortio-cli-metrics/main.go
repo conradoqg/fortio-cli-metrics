@@ -65,9 +65,10 @@ func corsMiddleware(h http.Handler, allowed []string) http.Handler {
 }
 
 func main() {
-    metricsAddr := flag.String("metrics-addr", ":9090", "Address for Prometheus metrics endpoint")
-    configPath := flag.String("config", "config.yaml", "Path to YAML config file defining tests")
-    corsOrigins := flag.String("cors-origins", "*", "Comma-separated list of allowed CORS origins (default '*')")
+   metricsAddr := flag.String("metrics-addr", ":9090", "Address for Prometheus metrics endpoint")
+   metricsPath := flag.String("metrics-path", "/metrics", "HTTP path for Prometheus metrics endpoint (default '/metrics')")
+   configPath := flag.String("config", "config.yaml", "Path to YAML config file defining tests")
+   corsOrigins := flag.String("cors-origins", "*", "Comma-separated list of allowed CORS origins (default '*')")
     flag.Parse()
 
     // Handle Ctrl+C to exit process immediately
@@ -233,8 +234,8 @@ func main() {
     allowed := strings.Split(*corsOrigins, ",")
     // HTTP handler for metrics with CORS
     h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
-    http.Handle("/metrics", corsMiddleware(h, allowed))
-    log.Printf("Starting metrics server at %s/metrics", *metricsAddr)
+   http.Handle(*metricsPath, corsMiddleware(h, allowed))
+   log.Printf("Starting metrics server at %s%s", *metricsAddr, *metricsPath)
     log.Fatal(http.ListenAndServe(*metricsAddr, nil))
 }
 
