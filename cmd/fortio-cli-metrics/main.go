@@ -16,6 +16,8 @@ import (
     "fortio.org/fortio/periodic"
     "github.com/prometheus/client_golang/prometheus"
     "github.com/prometheus/client_golang/prometheus/promhttp"
+    // Fortio log for controlling verbosity
+    flog "fortio.org/log"
 )
 
 // TestConfig defines a Fortio load test configuration.
@@ -37,6 +39,8 @@ var tests []TestConfig
 // Config is the YAML structure for the CLI configuration.
 type Config struct {
     GlobalDuration string       `yaml:"duration,omitempty"` // Global default duration (e.g. "60s")
+    // LogLevel sets verbosity for application and Fortio logs (Debug, Verbose, Info, Warning, Error, Critical)
+    LogLevel       string       `yaml:"log_level,omitempty"`
     Tests          []TestConfig `yaml:"tests"`
 }
 // corsMiddleware wraps an HTTP handler and sets CORS headers.
@@ -88,6 +92,12 @@ func main() {
     if err := yaml.Unmarshal(data, &cfg); err != nil {
         log.Fatalf("failed to parse config file: %v", err)
     }
+    // Apply log level from config if set
+    if cfg.LogLevel != "" {
+        if err := flog.SetLogLevelStr(cfg.LogLevel); err != nil {
+            log.Fatalf("invalid log level '%s': %v", cfg.LogLevel, err)
+        }
+    }
     if len(cfg.Tests) == 0 {
         log.Fatalf("no tests defined in config file %s", *configPath)
     }
@@ -136,16 +146,17 @@ func main() {
             Help: "Actual queries per second observed",
         }, []string{"test"},
     )
-    successCount := prometheus.NewCounterVec(
-        prometheus.CounterOpts{
-            Name: "fortio_requests_success_total",
-            Help: "Total number of successful requests",
+    // Success and failure counts per test run (gauges)
+    successCount := prometheus.NewGaugeVec(
+        prometheus.GaugeOpts{
+            Name: "fortio_requests_success",
+            Help: "Number of successful requests in the last test run",
         }, []string{"test"},
     )
-    failureCount := prometheus.NewCounterVec(
-        prometheus.CounterOpts{
-            Name: "fortio_requests_failure_total",
-            Help: "Total number of failed requests",
+    failureCount := prometheus.NewGaugeVec(
+        prometheus.GaugeOpts{
+            Name: "fortio_requests_failure",
+            Help: "Number of failed requests in the last test run",
         }, []string{"test"},
     )
 
@@ -240,12 +251,14 @@ func main() {
 }
 
 // runTest continuously runs the Fortio HTTP test for the configured duration and exports Prometheus metrics.
+// runTest continuously executes a Fortio HTTP test and exports Prometheus metrics.
 func runTest(
     tc TestConfig,
     globalDur time.Duration,
     latencyAvg, latencyP50, latencyP90, latencyP99 *prometheus.GaugeVec,
     actualQPS *prometheus.GaugeVec,
-    successCount, failureCount, runCount *prometheus.CounterVec,
+    successCount, failureCount *prometheus.GaugeVec,
+    runCount *prometheus.CounterVec,
 ) {
     // Determine per-test duration (override global if set)
     dur := globalDur
@@ -307,8 +320,8 @@ func runTest(
         }
         // Record actual QPS
         actualQPS.WithLabelValues(tc.Name).Set(res.ActualQPS)
-        // Record success and failure counts
-        successCount.WithLabelValues(tc.Name).Add(float64(hist.Count))
-        failureCount.WithLabelValues(tc.Name).Add(float64(res.ErrorsDurationHistogram.Count))
+        // Record success and failure counts for this run (not cumulative)
+        successCount.WithLabelValues(tc.Name).Set(float64(hist.Count))
+        failureCount.WithLabelValues(tc.Name).Set(float64(res.ErrorsDurationHistogram.Count))
     }
 }

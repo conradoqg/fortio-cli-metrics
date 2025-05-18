@@ -1,4 +1,6 @@
 # Sample configuration for fortio-cli
+# Log level for application and Fortio (one of Debug, Verbose, Info, Warning, Error, Critical)
+log_level: info
 # Global default duration for all tests (e.g., "60s"). If omitted, defaults to 5s per run.
 duration: 60s
 # Define one or more Fortio tests under the "tests" array. You may override duration per test.

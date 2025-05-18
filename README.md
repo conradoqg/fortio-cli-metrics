@@ -51,6 +51,8 @@
  fortio-cli-metrics uses a YAML file (default `config.yaml`) to define one or more load tests. See `config.sample.yaml` for an example:
 
  ```yaml
+ # Log level for application and Fortio (one of Debug, Verbose, Info, Warning, Error, Critical)
+ log_level: info
  # Global default duration for all tests (e.g., "60s"). If omitted, defaults to 5s per run.
  duration: 60s
 
@@ -67,7 +69,8 @@
      uniform: false          # disable uniform staggering
  ```
 
- Field descriptions:
+Field descriptions:
+ - `log_level`: (optional) Log level for application and Fortio logs (Debug, Verbose, Info, Warning, Error, Critical)
  - `duration` (global): Default duration for each run if not set per-test
  - `tests`: List of test configurations
    - `name`: Unique name of the test
@@ -87,8 +90,8 @@
  - `fortio_request_duration_seconds_p90`
  - `fortio_request_duration_seconds_p99`
  - `fortio_actual_qps`
- - `fortio_requests_success_total`
- - `fortio_requests_failure_total`
+ - `fortio_requests_success`         # Number of successful requests in the last test run
+ - `fortio_requests_failure`         # Number of failed requests in the last test run
  - `fortio_test_runs_total`
  - `fortio_test_config_qps`
  - `fortio_test_config_concurrency`
