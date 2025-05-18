@@ -121,31 +121,56 @@ func main() {
     latencyAvg := prometheus.NewGaugeVec(
         prometheus.GaugeOpts{
             Name: "fortio_request_duration_seconds_avg",
-            Help: "Average request latency in seconds",
+            Help: "Average request latency in seconds (excludes connection setup time)",
         }, []string{"test_name"},
     )
     latencyP50 := prometheus.NewGaugeVec(
         prometheus.GaugeOpts{
             Name: "fortio_request_duration_seconds_p50",
-            Help: "50th percentile latency in seconds",
+            Help: "50th percentile request latency in seconds (excludes connection setup time)",
         }, []string{"test_name"},
     )
     latencyP90 := prometheus.NewGaugeVec(
         prometheus.GaugeOpts{
             Name: "fortio_request_duration_seconds_p90",
-            Help: "90th percentile latency in seconds",
+            Help: "90th percentile request latency in seconds (excludes connection setup time)",
         }, []string{"test_name"},
     )
     latencyP99 := prometheus.NewGaugeVec(
         prometheus.GaugeOpts{
             Name: "fortio_request_duration_seconds_p99",
-            Help: "99th percentile latency in seconds",
+            Help: "99th percentile request latency in seconds (excludes connection setup time)",
         }, []string{"test_name"},
     )
     actualQPS := prometheus.NewGaugeVec(
         prometheus.GaugeOpts{
             Name: "fortio_actual_qps",
             Help: "Actual queries per second observed",
+        }, []string{"test_name"},
+    )
+   // Connection time metrics
+    connAvg := prometheus.NewGaugeVec(
+        prometheus.GaugeOpts{
+            Name: "fortio_connection_duration_seconds_avg",
+            Help: "Average connection setup time in seconds (TCP + TLS handshake)",
+        }, []string{"test_name"},
+    )
+    connP50 := prometheus.NewGaugeVec(
+        prometheus.GaugeOpts{
+            Name: "fortio_connection_duration_seconds_p50",
+            Help: "50th percentile connection setup time in seconds (TCP + TLS handshake)",
+        }, []string{"test_name"},
+    )
+    connP90 := prometheus.NewGaugeVec(
+        prometheus.GaugeOpts{
+            Name: "fortio_connection_duration_seconds_p90",
+            Help: "90th percentile connection setup time in seconds (TCP + TLS handshake)",
+        }, []string{"test_name"},
+    )
+    connP99 := prometheus.NewGaugeVec(
+        prometheus.GaugeOpts{
+            Name: "fortio_connection_duration_seconds_p99",
+            Help: "99th percentile connection setup time in seconds (TCP + TLS handshake)",
         }, []string{"test_name"},
     )
     // Success and failure counts per test run (gauges)
@@ -210,7 +235,9 @@ func main() {
     // Register metrics
     registry.MustRegister(
         latencyAvg, latencyP50, latencyP90, latencyP99,
-        actualQPS, successCount, failureCount,
+        actualQPS,
+        connAvg, connP50, connP90, connP99,
+        successCount, failureCount,
         runCount,
         configQPS, configConcurrency, configDuration,
         configJitter, configUniform,
@@ -281,6 +308,7 @@ func main() {
         go runTest(
             tc, globalDur,
             latencyAvg, latencyP50, latencyP90, latencyP99,
+            connAvg, connP50, connP90, connP99,
             actualQPS, successCount, failureCount,
             runCount,
             httpCodeCount,
@@ -302,6 +330,7 @@ func runTest(
     tc TestConfig,
     globalDur time.Duration,
     latencyAvg, latencyP50, latencyP90, latencyP99 *prometheus.GaugeVec,
+    connAvg, connP50, connP90, connP99 *prometheus.GaugeVec,
     actualQPS *prometheus.GaugeVec,
     successCount, failureCount *prometheus.GaugeVec,
     runCount *prometheus.CounterVec,
@@ -373,6 +402,23 @@ func runTest(
         // Record HTTP status code counts for this run
         for code, count := range res.RetCodes {
             httpCodeCount.WithLabelValues(tc.Name, strconv.Itoa(code)).Set(float64(count))
+        }
+        // Record connection time metrics for this run
+        if cs := res.ConnectionStats; cs != nil {
+            connAvg.WithLabelValues(tc.Name).Set(cs.Avg)
+            cMap := make(map[float64]float64, len(cs.Percentiles))
+            for _, p := range cs.Percentiles {
+                cMap[p.Percentile] = p.Value
+            }
+            if v, ok := cMap[50.0]; ok {
+                connP50.WithLabelValues(tc.Name).Set(v)
+            }
+            if v, ok := cMap[90.0]; ok {
+                connP90.WithLabelValues(tc.Name).Set(v)
+            }
+            if v, ok := cMap[99.0]; ok {
+                connP99.WithLabelValues(tc.Name).Set(v)
+            }
         }
     }
 }
