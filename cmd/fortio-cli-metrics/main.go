@@ -5,9 +5,11 @@ import (
     "fmt"
     "log"
     "net/http"
+    "io"
     "os"
     "os/signal"
     "strings"
+    "strconv"
     "time"
 
     "gopkg.in/yaml.v3"
@@ -198,6 +200,13 @@ func main() {
             Help: "Whether uniform staggering is enabled for the Fortio test (1 = true)",
         }, []string{"test_name"},
     )
+    // HTTP status codes count per test run
+    httpCodeCount := prometheus.NewGaugeVec(
+        prometheus.GaugeOpts{
+            Name: "fortio_http_response_code_count",
+            Help: "Number of HTTP responses per status code in the last test run",
+        }, []string{"test_name", "status_code"},
+    )
     // Register metrics
     registry.MustRegister(
         latencyAvg, latencyP50, latencyP90, latencyP99,
@@ -205,6 +214,7 @@ func main() {
         runCount,
         configQPS, configConcurrency, configDuration,
         configJitter, configUniform,
+        httpCodeCount,
     )
 
     // Expose test configuration as metrics
@@ -231,6 +241,41 @@ func main() {
             configUniform.WithLabelValues(tc.Name).Set(0)
         }
     }
+    // Perform a sample request per test to log the target URL and check connectivity
+    for _, tc := range tests {
+        log.Printf("Performing sample request for test %s to %s", tc.Name, tc.URL)
+        req, err := http.NewRequest(http.MethodGet, tc.URL, nil)
+        if err != nil {
+            log.Printf("error creating sample request for test %s: %v", tc.Name, err)
+            continue
+        }
+        for hn, hv := range tc.Headers {
+            // Honor Host header override by setting Request.Host, others via Header
+            if strings.ToLower(hn) == "host" {
+                req.Host = hv
+            } else {
+                req.Header.Set(hn, hv)
+            }
+        }
+        resp, err := http.DefaultClient.Do(req)
+        if err != nil {
+            log.Printf("error performing sample request for test %s: %v", tc.Name, err)
+            continue
+        }
+        log.Printf("sample response for test %s: status %s", tc.Name, resp.Status)
+        // Print response headers
+        for header, values := range resp.Header {
+            log.Printf("sample response for test %s: header %s: %v", tc.Name, header, values)
+        }
+        // Print response body
+        bodyData, err := io.ReadAll(resp.Body)
+        if err != nil {
+            log.Printf("sample response for test %s: error reading body: %v", tc.Name, err)
+        } else {
+            log.Printf("sample response for test %s: body: %s", tc.Name, string(bodyData))
+        }
+        resp.Body.Close()
+    }
     // Start each test in its own goroutine
     for _, tc := range tests {
         go runTest(
@@ -238,6 +283,7 @@ func main() {
             latencyAvg, latencyP50, latencyP90, latencyP99,
             actualQPS, successCount, failureCount,
             runCount,
+            httpCodeCount,
         )
     }
 
@@ -259,6 +305,7 @@ func runTest(
     actualQPS *prometheus.GaugeVec,
     successCount, failureCount *prometheus.GaugeVec,
     runCount *prometheus.CounterVec,
+    httpCodeCount *prometheus.GaugeVec,
 ) {
     // Determine per-test duration (override global if set)
     dur := globalDur
@@ -323,5 +370,9 @@ func runTest(
         // Record success and failure counts for this run (not cumulative)
         successCount.WithLabelValues(tc.Name).Set(float64(hist.Count))
         failureCount.WithLabelValues(tc.Name).Set(float64(res.ErrorsDurationHistogram.Count))
+        // Record HTTP status code counts for this run
+        for code, count := range res.RetCodes {
+            httpCodeCount.WithLabelValues(tc.Name, strconv.Itoa(code)).Set(float64(count))
+        }
     }
 }

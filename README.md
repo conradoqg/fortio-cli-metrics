@@ -7,6 +7,7 @@
  - Expose latency percentiles, QPS, success/failure counts, and run counts as Prometheus metrics
  - Export test configuration values (QPS, concurrency, duration, jitter, uniform) as metrics
  - CORS support for metrics scraping from browsers
+ - Initial sample HTTP request per test: logs response status to verify the target URL
 
  ## Prerequisites
  - Go 1.23 or later
@@ -98,6 +99,7 @@ Field descriptions:
  - `fortio_test_config_duration_seconds`
  - `fortio_test_config_jitter`
  - `fortio_test_config_uniform`
+ - `fortio_http_response_code_count`   # Number of HTTP responses per status code in the last test run (labels: test_name, status_code)
 
  ## Contributing
 
