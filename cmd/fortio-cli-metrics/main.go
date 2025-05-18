@@ -268,6 +268,8 @@ func runTest(
         },
         HTTPOptions: *httpOpts,
     }
+    // Disable Fortio's internal signal handlers to allow immediate Ctrl+C kill
+    runnerOpts.Stop = periodic.NewAborter()
     // Apply any custom HTTP headers
     for hn, hv := range tc.Headers {
         hdr := fmt.Sprintf("%s: %s", hn, hv)
