@@ -88,8 +88,10 @@ Field descriptions:
  Example metrics exposed (labelled by `test_name`):
  - `fortio_request_duration_seconds_avg`
  - `fortio_request_duration_seconds_p50`
+ - `fortio_request_duration_seconds_p75`
  - `fortio_request_duration_seconds_p90`
  - `fortio_request_duration_seconds_p99`
+ - `fortio_request_duration_seconds_p99_9`
  - `fortio_actual_qps`
  - `fortio_requests_success`         # Number of successful requests in the last test run
  - `fortio_requests_failure`         # Number of failed requests in the last test run
@@ -102,8 +104,10 @@ Field descriptions:
  - `fortio_test_config_uniform`
  - `fortio_connection_duration_seconds_avg`     # Average connection time in seconds
  - `fortio_connection_duration_seconds_p50`    # 50th percentile connection time in seconds
+ - `fortio_connection_duration_seconds_p75`    # 75th percentile connection time in seconds
  - `fortio_connection_duration_seconds_p90`    # 90th percentile connection time in seconds
  - `fortio_connection_duration_seconds_p99`    # 99th percentile connection time in seconds
+ - `fortio_connection_duration_seconds_p99_9`  # 99.9th percentile connection time in seconds
  - `fortio_http_response_code_count`   # Number of HTTP responses per status code in the last test run (labels: test_name, status_code)
 
  ## Contributing

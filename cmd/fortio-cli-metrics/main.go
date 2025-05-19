@@ -130,6 +130,12 @@ func main() {
             Help: "50th percentile request latency in seconds (excludes connection setup time)",
         }, []string{"test_name"},
     )
+    latencyP75 := prometheus.NewGaugeVec(
+        prometheus.GaugeOpts{
+            Name: "fortio_request_duration_seconds_p75",
+            Help: "75th percentile request latency in seconds (excludes connection setup time)",
+        }, []string{"test_name"},
+    )
     latencyP90 := prometheus.NewGaugeVec(
         prometheus.GaugeOpts{
             Name: "fortio_request_duration_seconds_p90",
@@ -140,6 +146,12 @@ func main() {
         prometheus.GaugeOpts{
             Name: "fortio_request_duration_seconds_p99",
             Help: "99th percentile request latency in seconds (excludes connection setup time)",
+        }, []string{"test_name"},
+    )
+    latencyP99_9 := prometheus.NewGaugeVec(
+        prometheus.GaugeOpts{
+            Name: "fortio_request_duration_seconds_p99_9",
+            Help: "99.9th percentile request latency in seconds (excludes connection setup time)",
         }, []string{"test_name"},
     )
     actualQPS := prometheus.NewGaugeVec(
@@ -161,6 +173,12 @@ func main() {
             Help: "50th percentile connection setup time in seconds (TCP + TLS handshake)",
         }, []string{"test_name"},
     )
+    connP75 := prometheus.NewGaugeVec(
+        prometheus.GaugeOpts{
+            Name: "fortio_connection_duration_seconds_p75",
+            Help: "75th percentile connection setup time in seconds (TCP + TLS handshake)",
+        }, []string{"test_name"},
+    )
     connP90 := prometheus.NewGaugeVec(
         prometheus.GaugeOpts{
             Name: "fortio_connection_duration_seconds_p90",
@@ -171,6 +189,12 @@ func main() {
         prometheus.GaugeOpts{
             Name: "fortio_connection_duration_seconds_p99",
             Help: "99th percentile connection setup time in seconds (TCP + TLS handshake)",
+        }, []string{"test_name"},
+    )
+    connP99_9 := prometheus.NewGaugeVec(
+        prometheus.GaugeOpts{
+            Name: "fortio_connection_duration_seconds_p99_9",
+            Help: "99.9th percentile connection setup time in seconds (TCP + TLS handshake)",
         }, []string{"test_name"},
     )
     // Success and failure counts per test run (gauges)
@@ -234,9 +258,9 @@ func main() {
     )
     // Register metrics
     registry.MustRegister(
-        latencyAvg, latencyP50, latencyP90, latencyP99,
+        latencyAvg, latencyP50, latencyP75, latencyP90, latencyP99, latencyP99_9,
         actualQPS,
-        connAvg, connP50, connP90, connP99,
+        connAvg, connP50, connP75, connP90, connP99, connP99_9,
         successCount, failureCount,
         runCount,
         configQPS, configConcurrency, configDuration,
@@ -307,8 +331,8 @@ func main() {
     for _, tc := range tests {
         go runTest(
             tc, globalDur,
-            latencyAvg, latencyP50, latencyP90, latencyP99,
-            connAvg, connP50, connP90, connP99,
+            latencyAvg, latencyP50, latencyP75, latencyP90, latencyP99, latencyP99_9,
+            connAvg, connP50, connP75, connP90, connP99, connP99_9,
             actualQPS, successCount, failureCount,
             runCount,
             httpCodeCount,
@@ -329,8 +353,8 @@ func main() {
 func runTest(
     tc TestConfig,
     globalDur time.Duration,
-    latencyAvg, latencyP50, latencyP90, latencyP99 *prometheus.GaugeVec,
-    connAvg, connP50, connP90, connP99 *prometheus.GaugeVec,
+    latencyAvg, latencyP50, latencyP75, latencyP90, latencyP99, latencyP99_9 *prometheus.GaugeVec,
+    connAvg, connP50, connP75, connP90, connP99, connP99_9 *prometheus.GaugeVec,
     actualQPS *prometheus.GaugeVec,
     successCount, failureCount *prometheus.GaugeVec,
     runCount *prometheus.CounterVec,
@@ -352,7 +376,7 @@ func runTest(
             QPS:         tc.QPS,
             NumThreads:  tc.Concurrency,
             Duration:    dur,
-            Percentiles: []float64{50.0, 90.0, 99.0},
+            Percentiles: []float64{50.0, 75.0, 90.0, 99.0, 99.9},
             Jitter:      tc.Jitter,
             Uniform:     tc.Uniform,
         },
@@ -388,11 +412,17 @@ func runTest(
         if v, ok := pMap[50.0]; ok {
             latencyP50.WithLabelValues(tc.Name).Set(v)
         }
+        if v, ok := pMap[75.0]; ok {
+            latencyP75.WithLabelValues(tc.Name).Set(v)
+        }
         if v, ok := pMap[90.0]; ok {
             latencyP90.WithLabelValues(tc.Name).Set(v)
         }
         if v, ok := pMap[99.0]; ok {
             latencyP99.WithLabelValues(tc.Name).Set(v)
+        }
+        if v, ok := pMap[99.9]; ok {
+            latencyP99_9.WithLabelValues(tc.Name).Set(v)
         }
         // Record actual QPS
         actualQPS.WithLabelValues(tc.Name).Set(res.ActualQPS)
@@ -413,11 +443,17 @@ func runTest(
             if v, ok := cMap[50.0]; ok {
                 connP50.WithLabelValues(tc.Name).Set(v)
             }
+            if v, ok := cMap[75.0]; ok {
+                connP75.WithLabelValues(tc.Name).Set(v)
+            }
             if v, ok := cMap[90.0]; ok {
                 connP90.WithLabelValues(tc.Name).Set(v)
             }
             if v, ok := cMap[99.0]; ok {
                 connP99.WithLabelValues(tc.Name).Set(v)
+            }
+            if v, ok := cMap[99.9]; ok {
+                connP99_9.WithLabelValues(tc.Name).Set(v)
             }
         }
     }

@@ -6,6 +6,7 @@ toolchain go1.23.9
 
 require (
 	fortio.org/fortio v1.69.4
+	fortio.org/log v1.17.2
 	github.com/prometheus/client_golang v1.22.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -13,7 +14,6 @@ require (
 require (
 	fortio.org/cli v1.10.0 // indirect
 	fortio.org/dflag v1.8.1 // indirect
-	fortio.org/log v1.17.2 // indirect
 	fortio.org/safecast v1.0.0 // indirect
 	fortio.org/scli v1.16.1 // indirect
 	fortio.org/sets v1.3.0 // indirect
